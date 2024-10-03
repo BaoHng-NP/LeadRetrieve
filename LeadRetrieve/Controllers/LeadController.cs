@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using LeadRetrieve.Repositories;
 using Newtonsoft.Json;
+using System.Net;
 
 namespace LeadRetrieve.Controllers
 {
@@ -21,12 +22,12 @@ namespace LeadRetrieve.Controllers
         [HttpGet("FetchLeads")]
         public async Task<IActionResult> FetchLeads()
         {
-            const string token = "EAAOZC8UI9SwwBOZBfbgiEuY2kPpNzCGEaz6pKZCqwkqyw84iCHvZCupSNLUeCSpfz979IlGc4DrMZC8ZADr4aY63cCIwRqzPqAQQZAjUYheNMeBV2pKqMgFth1E3EtoqnVsJyfXQ8OVsDAbcK55mFH2Agm0TalwQ2vrozOeUA12lzG5xFdv8VRnT0WZCahLIp5JxNBHARhc82ZAt72lkS4UdVZB9ZBtnQFZAP6JJauZCOULFZC";
+            const string token = "EAAOZC8UI9SwwBO0MODcQ18I6ZAugIolIKNppx0dR5X8blBZBR2YsC1BCrB7WexNNITvCsXtobX8uSdjnDkTRBPofm8AuArB6ZAFLeSLvPA0cD5gVIKvLrGfzN48OKAv1oKBFpPClo9olZAaN9ixpuTNlIX29giBpQRJaOgTr1LCipTxYowXS0gELaxxij5zQ4fJs7gCg7awmuqeRpci7ACm1omWBOvXExgcsOKjyu";
             //form1: 1622460511944043
             //nonamedform: 1056720539243856
             const string apiUrl = "https://graph.facebook.com/v20.0/1056720539243856/leads?access_token=" + token;
 
-        
+
             using (var httpClient = new HttpClient())
             {
                 var response = await httpClient.GetStringAsync(apiUrl);
@@ -41,13 +42,13 @@ namespace LeadRetrieve.Controllers
                     }
                     var newlead = new Lead
                     {
-                        LeadId = lead.Id, 
+                        LeadId = lead.Id,
                         CreatedTime = DateTime.Parse(lead.CreatedTime),
                         JsonResponse = JsonConvert.SerializeObject(lead.FieldData)
                     };
 
                     _leadRepository.AddLead(newlead);
-                    
+
                     foreach (var field in lead.FieldData)
                     {
                         //var leadEntity = new LeadDataEntity
@@ -77,5 +78,55 @@ namespace LeadRetrieve.Controllers
 
             return Ok(new { Message = "Leads fetched and stored successfully." });
         }
+
+        [HttpPost("webhook")]
+        public async Task<HttpResponseMessage> Post([FromBody] JsonDataModel data)
+        {
+            try
+            {
+                var entry = data.Entry.FirstOrDefault();
+                var change = entry?.Changes.FirstOrDefault();
+                if (change == null) return new HttpResponseMessage(HttpStatusCode.BadRequest);
+
+                //Generate user access token here https://developers.facebook.com/tools/accesstoken/
+                const string token = "EAAOZC8UI9SwwBO0MODcQ18I6ZAugIolIKNppx0dR5X8blBZBR2YsC1BCrB7WexNNITvCsXtobX8uSdjnDkTRBPofm8AuArB6ZAFLeSLvPA0cD5gVIKvLrGfzN48OKAv1oKBFpPClo9olZAaN9ixpuTNlIX29giBpQRJaOgTr1LCipTxYowXS0gELaxxij5zQ4fJs7gCg7awmuqeRpci7ACm1omWBOvXExgcsOKjyu";
+
+
+                var leadUrl = $"https://graph.facebook.com/v14.0/{change.Value.LeadGenId}?access_token={token}";
+                var formUrl = $"https://graph.facebook.com/v14.0/{change.Value.FormId}?access_token={token}";
+
+
+                if (!string.IsNullOrEmpty(token))
+                {
+                    using (var httpClientLead = new HttpClient())
+                    {
+                        var response = await httpClientLead.GetStringAsync(formUrl);
+                        if (!string.IsNullOrEmpty(response))
+                        {
+                            var jsonObjLead = JsonConvert.DeserializeObject<LeadFormData>(response);
+                            //jsonObjLead.Name contains the lead ad name
+
+                            //If response is valid get the field data
+                            using (var httpClientFields = new HttpClient())
+                            {
+                                var responseFields = await httpClientFields.GetStringAsync(leadUrl);
+                                if (!string.IsNullOrEmpty(responseFields))
+                                {
+                                    var jsonObjFields = JsonConvert.DeserializeObject<LeadData>(responseFields);
+                                    //jsonObjFields.FieldData contains the field value
+                                }
+                            }
+                        }
+                    }
+                }
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                return new HttpResponseMessage(HttpStatusCode.BadGateway);
+            }
+        }
+
+
     }
 }
