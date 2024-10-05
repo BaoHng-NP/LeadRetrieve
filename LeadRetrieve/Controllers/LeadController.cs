@@ -22,7 +22,7 @@ namespace LeadRetrieve.Controllers
         [HttpGet("FetchLeads")]
         public async Task<IActionResult> FetchLeads()
         {
-            const string token = "EAAOZC8UI9SwwBO4ihDTOI1fJB8zqrxNdfELVtmgmG0NZB7tvAOv1ybcK3f4aGIHbBiApRlcayZBm8S7l7DEiGcCZCxfd5z1JvS14ftzvfDnK6GZC8qlaMCR8xwD3nuOFcGQgm6AP3kQfBn9MVrDkYwsJSmtGdkvWzFwGneHuRNwPkitxfrxAlAjXRSULLwTYAd5ZCI3kQgQZAXmQg9fjnRQQ7b13s3wcx2YNzM2wZCq8";
+            const string token = "EAAOZC8UI9SwwBO5iXdcQjB4oj278u2OKZBS6RayLEcmnjt6n3PnZAxGWlIjMudrDVRDD9oyRfCgrQBzZArEBLOZBN7aRBbKWkmnanHzSrz1iGMiZCOSDOVFpZBIOjjw56oQZCYZBun1yYPoR01txJH7pEdN0QNA9oZBQDcQ4cKWEUty6E74740ARvI3cN4cjtpqYxdkJJ7oOrRYuCTBZBiI4lDXkGFOTnBm0Fz4EpgV4DqluwZDZD";
             //form1: 1622460511944043
             //nonamedform: 1056720539243856
             const string formUrl = "https://graph.facebook.com/v20.0/1056720539243856/leads?access_token=" + token;
@@ -70,6 +70,24 @@ namespace LeadRetrieve.Controllers
             return Ok(new { Message = "Leads fetched and stored successfully." });
         }
 
+        [HttpGet]
+        [Route("webhooks")]
+        public IActionResult VerifyWebhook([FromQuery(Name = "hub.mode")] string mode, [FromQuery(Name = "hub.challenge")] string challenge, [FromQuery(Name = "hub.verify_token")] string token)
+        {
+            string verifyToken = "LEADLEAD";  // Token bạn đã cấu hình trên Facebook
+
+            // Kiểm tra token xác thực
+            if (token == verifyToken && mode == "subscribe")
+            {
+                // Trả về giá trị challenge nếu xác thực thành công
+                return Ok(challenge);
+            }
+            else
+            {
+                // Trả về lỗi nếu token không khớp
+                return Forbid();
+            }
+        }
 
         [HttpPost("webhook")]
         public async Task<HttpResponseMessage> Post([FromBody] JsonDataModel data)
@@ -80,7 +98,7 @@ namespace LeadRetrieve.Controllers
                 var change = entry?.Changes.FirstOrDefault();
                 if (change == null) return new HttpResponseMessage(HttpStatusCode.BadRequest);
 
-                const string token = "EAAOZC8UI9SwwBO4ihDTOI1fJB8zqrxNdfELVtmgmG0NZB7tvAOv1ybcK3f4aGIHbBiApRlcayZBm8S7l7DEiGcCZCxfd5z1JvS14ftzvfDnK6GZC8qlaMCR8xwD3nuOFcGQgm6AP3kQfBn9MVrDkYwsJSmtGdkvWzFwGneHuRNwPkitxfrxAlAjXRSULLwTYAd5ZCI3kQgQZAXmQg9fjnRQQ7b13s3wcx2YNzM2wZCq8";
+                const string token = "EAAOZC8UI9SwwBO5iXdcQjB4oj278u2OKZBS6RayLEcmnjt6n3PnZAxGWlIjMudrDVRDD9oyRfCgrQBzZArEBLOZBN7aRBbKWkmnanHzSrz1iGMiZCOSDOVFpZBIOjjw56oQZCYZBun1yYPoR01txJH7pEdN0QNA9oZBQDcQ4cKWEUty6E74740ARvI3cN4cjtpqYxdkJJ7oOrRYuCTBZBiI4lDXkGFOTnBm0Fz4EpgV4DqluwZDZD";
 
                 var formUrl = $"https://graph.facebook.com/v20.0/{change.Value.FormId}/leads?access_token={token}";
 

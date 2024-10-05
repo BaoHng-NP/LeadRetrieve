@@ -14,6 +14,18 @@ services:
       target: final
     ports:
       - 8080:8080
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    command:
+      - "http"
+      - "http://host.docker.internal:8080"
+    environment:
+      NGROK_AUTHTOKEN: 2n02LFzHayGTa46WzJhH9THjArj_293rX5ZwUKUdiYxrTzxRH
+    ports:
+      - 4040:4040
 
 # The commented out section below is an example of how to define a PostgreSQL
 # database that your application can use. `depends_on` tells Docker Compose to

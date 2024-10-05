@@ -2,6 +2,8 @@
 using LeadRetrieve.Controllers;
 using LeadRetrieve.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
 
 namespace LeadRetrieve
 {
