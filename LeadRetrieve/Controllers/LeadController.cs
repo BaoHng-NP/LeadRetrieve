@@ -12,20 +12,25 @@ namespace LeadRetrieve.Controllers
     {
         LeadFieldDataRepository _leadFieldDataRepository = new LeadFieldDataRepository();
         LeadRepository _leadRepository = new LeadRepository();
+        private readonly PageTokenService _pageTokenService;
         private readonly LeadAdContext _context;
 
-        public LeadController(LeadAdContext context)
+
+        public LeadController(LeadAdContext context, PageTokenService pageTokenService)
         {
             _context = context;
+            _pageTokenService = pageTokenService;
+
         }
 
+
+        //Test get lead api
         [HttpGet("FetchLeads")]
         public async Task<IActionResult> FetchLeads()
         {
-            const string token = "EAAOZC8UI9SwwBO5iXdcQjB4oj278u2OKZBS6RayLEcmnjt6n3PnZAxGWlIjMudrDVRDD9oyRfCgrQBzZArEBLOZBN7aRBbKWkmnanHzSrz1iGMiZCOSDOVFpZBIOjjw56oQZCYZBun1yYPoR01txJH7pEdN0QNA9oZBQDcQ4cKWEUty6E74740ARvI3cN4cjtpqYxdkJJ7oOrRYuCTBZBiI4lDXkGFOTnBm0Fz4EpgV4DqluwZDZD";
-            //form1: 1622460511944043
-            //nonamedform: 1056720539243856
-            const string formUrl = "https://graph.facebook.com/v20.0/1056720539243856/leads?access_token=" + token;
+            string token = await _pageTokenService.GetPageTokenAsync();
+            //<formId>/leads?access_token={token}
+            var formUrl = $"https://graph.facebook.com/v20.0/1056720539243856/leads?access_token={token}";
 
 
             using (var httpClient = new HttpClient())
@@ -66,30 +71,28 @@ namespace LeadRetrieve.Controllers
 
                 await _context.SaveChangesAsync();
             }
-
             return Ok(new { Message = "Leads fetched and stored successfully." });
         }
 
+        //Webhooks endpoint verification 
         [HttpGet]
         [Route("webhooks")]
         public IActionResult VerifyWebhook([FromQuery(Name = "hub.mode")] string mode, [FromQuery(Name = "hub.challenge")] string challenge, [FromQuery(Name = "hub.verify_token")] string token)
         {
-            string verifyToken = "LEADLEAD";  // Token bạn đã cấu hình trên Facebook
+            string verifyToken = Environment.GetEnvironmentVariable("WEBHOOKS_VERIFY_TOKEN");  
 
-            // Kiểm tra token xác thực
             if (token == verifyToken && mode == "subscribe")
             {
-                // Trả về giá trị challenge nếu xác thực thành công
                 return Ok(challenge);
             }
             else
             {
-                // Trả về lỗi nếu token không khớp
                 return Forbid();
             }
         }
 
-        [HttpPost("webhook")]
+        //WEBHOOKS POST endpoint
+        [HttpPost("webhooks")]
         public async Task<HttpResponseMessage> Post([FromBody] JsonDataModel data)
         {
             try
@@ -98,9 +101,9 @@ namespace LeadRetrieve.Controllers
                 var change = entry?.Changes.FirstOrDefault();
                 if (change == null) return new HttpResponseMessage(HttpStatusCode.BadRequest);
 
-                const string token = "EAAOZC8UI9SwwBO5iXdcQjB4oj278u2OKZBS6RayLEcmnjt6n3PnZAxGWlIjMudrDVRDD9oyRfCgrQBzZArEBLOZBN7aRBbKWkmnanHzSrz1iGMiZCOSDOVFpZBIOjjw56oQZCYZBun1yYPoR01txJH7pEdN0QNA9oZBQDcQ4cKWEUty6E74740ARvI3cN4cjtpqYxdkJJ7oOrRYuCTBZBiI4lDXkGFOTnBm0Fz4EpgV4DqluwZDZD";
+                string token = await _pageTokenService.GetPageTokenAsync();
 
-                var formUrl = $"https://graph.facebook.com/v20.0/{change.Value.FormId}/leads?access_token={token}";
+                var formUrl = $"https://graph.facebook.com/v20.0/{change.Value.form_id}/leads?access_token={token}";
 
                 if (!string.IsNullOrEmpty(token))
                 {
@@ -151,6 +154,7 @@ namespace LeadRetrieve.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.BadGateway);
             }
         }

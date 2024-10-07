@@ -1,8 +1,10 @@
 
+using DotNetEnv;
 using LeadRetrieve.Controllers;
 using LeadRetrieve.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+
 
 
 namespace LeadRetrieve
@@ -11,6 +13,7 @@ namespace LeadRetrieve
     {
         public static void Main(string[] args)
         {
+            Env.Load();
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
@@ -21,10 +24,15 @@ namespace LeadRetrieve
             builder.Services.AddSwaggerGen();
             builder.Services.AddDbContext<LeadAdContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-
             //builder.Services.AddHttpClient();
             //builder.Services.AddScoped<LeadController>();
             //builder.Services.AddHostedService<FetchLeadsHostedService>();
+
+            builder.Services.AddHttpClient();
+
+            // Register PageTokenService for dependency injection
+            builder.Services.AddScoped<PageTokenService>();
+
 
             var app = builder.Build();
 
@@ -35,7 +43,6 @@ namespace LeadRetrieve
                 {
                     var context = services.GetRequiredService<LeadAdContext>();
                     var created = context.Database.EnsureCreated();
-
                 }
                 catch (Exception ex)
                 {
@@ -49,16 +56,17 @@ namespace LeadRetrieve
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
+
             }
 
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
 
-
             app.MapControllers();
 
             app.Run();
         }
+
     }
 }

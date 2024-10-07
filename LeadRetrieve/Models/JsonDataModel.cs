@@ -35,22 +35,22 @@ namespace LeadRetrieve.Models
     public class Value
     {
         [JsonProperty("ad_id")]
-        public string AdId { get; set; }
+        public string ad_id { get; set; }
 
         [JsonProperty("form_id")]
-        public string FormId { get; set; }
+        public string form_id { get; set; }
 
         [JsonProperty("leadgen_id")]
-        public string LeadGenId { get; set; }
+        public string leadgen_id { get; set; }
 
         [JsonProperty("created_time")]
-        public int CreatedTime { get; set; }
+        public int created_time { get; set; }
 
         [JsonProperty("page_id")]
-        public string PageId { get; set; }
+        public string page_id { get; set; }
 
         [JsonProperty("adgroup_id")]
-        public string AdGroupId { get; set; }
+        public string adgroup_id { get; set; }
     }
 
 
