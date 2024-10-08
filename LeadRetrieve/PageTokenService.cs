@@ -8,11 +8,11 @@ namespace LeadRetrieve
     public class PageTokenService
     {
         private readonly HttpClient _httpClient;
-        private readonly ILogger<PageTokenService> _logger; // Thêm ILogger
+        private readonly ILogger<PageTokenService> _logger; 
         private string _pageToken;
         private DateTime _tokenExpiration;
 
-        public PageTokenService(HttpClient httpClient, ILogger<PageTokenService> logger) // Tiêm ILogger
+        public PageTokenService(HttpClient httpClient, ILogger<PageTokenService> logger) 
         {
             _httpClient = httpClient;
             _logger = logger; 

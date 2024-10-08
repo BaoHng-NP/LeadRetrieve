@@ -24,12 +24,9 @@ namespace LeadRetrieve
             builder.Services.AddSwaggerGen();
             builder.Services.AddDbContext<LeadAdContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            //builder.Services.AddHttpClient();
-            //builder.Services.AddScoped<LeadController>();
-            //builder.Services.AddHostedService<FetchLeadsHostedService>();
+
 
             builder.Services.AddHttpClient();
-
             // Register PageTokenService for dependency injection
             builder.Services.AddScoped<PageTokenService>();
 
