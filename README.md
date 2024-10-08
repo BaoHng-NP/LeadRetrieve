@@ -14,6 +14,14 @@ Ngrok for local development (if testing webhooks)</br>
 <h3>Implementation</h3>
 -Compile and host the Web API in your server Facebook webhooks only accepts https URL
 
+<h3>Facebook App & Webhook Setup</h3>
+Create facebook app</br>
+Add webhooks to the app product</br>
+Config webhook--> select page</br>
+subscribe to Leadgen --> test</br>
+request post api "<user_id>/subscribed_apps?subscribed_fields=leadgen" to subcribe leadgen webhook for the page</br>
+
+
 <h3>Environment Setup</h3>
 -You need to configure your environment variables in a .env file in the project root director</br>
 Note: Make sure the .env file is included and properly loaded when building the application with Docker or running locally.
