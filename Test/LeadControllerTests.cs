@@ -23,7 +23,7 @@ public class LeadControllerTests
     private readonly Mock<LeadAdContext> _mockContext;
     private readonly Mock<LeadRepository> _mockLeadRepository;
     private readonly Mock<LeadFieldDataRepository> _mockLeadFieldDataRepository;
-    private LeadController _controller;
+    private readonly LeadController _controller;
 
     public LeadControllerTests()
     {
@@ -105,15 +105,87 @@ public class LeadControllerTests
         var result = await _controller.FetchLeads();
 
         // Assert
-        Assert.IsType<OkObjectResult>(result);
-        var okResult = result as OkObjectResult;
+        var okResult = Assert.IsType<OkObjectResult>(result);
         Assert.NotNull(okResult);
         Assert.Equal("Leads fetched and stored successfully.", okResult.Value.GetType().GetProperty("Message")?.GetValue(okResult.Value));
 
         // Verify methods were called
-        _mockLeadRepository.Verify(repo => repo.GetByLeadId("123"), Times.Never);
+        _mockLeadRepository.Verify(repo => repo.GetByLeadId(It.IsAny<string>()), Times.Never);
         _mockLeadRepository.Verify(repo => repo.AddLead(It.IsAny<Lead>()), Times.Once);
         _mockLeadFieldDataRepository.Verify(repo => repo.AddLeadFieldData(It.IsAny<Leadfielddata>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Post_ValidData_ProcessesLeadsCorrectly()
+    {
+        // Arrange
+        var data = new JsonDataModel
+        {
+            Entry = new List<Entry>
+            {
+                new Entry
+                {
+                    Changes = new List<Change>
+                    {
+                        new Change
+                        {
+                            Value = new Value
+                            {
+                                form_id = "test_form_id"
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        var leadResponse = new LeadResponse
+        {
+            Data = new List<LeadData>
+            {
+                new LeadData
+                {
+                    Id = "lead_id_1",
+                    CreatedTime = DateTime.Now.ToString(),
+                    FieldData = new List<FieldData>
+                    {
+                        new FieldData
+                        {
+                            Name = "Field1",
+                            Values = new List<string> { "Value1" }
+                        }
+                    }
+                }
+            }
+        };
+
+        var token = "fake_access_token";
+        var formUrl = $"https://graph.facebook.com/v20.0/test_form_id/leads?access_token={token}";
+
+        _mockPageTokenService.Setup(p => p.GetPageTokenAsync()).ReturnsAsync(token);
+        _mockHttpMessageHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Get && req.RequestUri.ToString() == formUrl),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(JsonConvert.SerializeObject(leadResponse))
+            });
+
+        _mockLeadRepository.Setup(l => l.GetByLeadId(It.IsAny<string>())).Returns(() => null);
+
+        // Act
+        var result = await _controller.Post(data);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+
+        _mockLeadRepository.Verify(l => l.AddLead(It.IsAny<Lead>()), Times.Once);
+        _mockLeadFieldDataRepository.Verify(lfd => lfd.AddLeadFieldData(It.IsAny<Leadfielddata>()), Times.Once);
     }
 }
 
@@ -126,6 +198,6 @@ public class TestablePageTokenService : PageTokenService
 
     public virtual Task<string> GetPageTokenAsync()
     {
-        return base.GetPageTokenAsync(); // Gọi phương thức gốc nếu cần
+        return base.GetPageTokenAsync(); // Calls base method if needed
     }
 }
