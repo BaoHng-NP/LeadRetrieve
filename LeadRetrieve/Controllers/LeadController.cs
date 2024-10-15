@@ -14,6 +14,7 @@ namespace LeadRetrieve.Controllers
         LeadRepository _leadRepository = new LeadRepository();
         private readonly PageTokenService _pageTokenService;
         private readonly LeadAdContext _context;
+        public HttpClient httpClient = new HttpClient();
 
 
         public LeadController(LeadAdContext context, PageTokenService pageTokenService)
@@ -33,7 +34,7 @@ namespace LeadRetrieve.Controllers
             var formUrl = $"https://graph.facebook.com/v20.0/1056720539243856/leads?access_token={token}";
 
 
-            using (var httpClient = new HttpClient())
+            using (httpClient)
             {
                 var response = await httpClient.GetStringAsync(formUrl);
                 var leadResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<LeadResponse>(response);
@@ -108,7 +109,7 @@ namespace LeadRetrieve.Controllers
                 if (!string.IsNullOrEmpty(token))
                 {
 
-                    using (var httpClient = new HttpClient())
+                    using (httpClient)
                     {
                         var response = await httpClient.GetStringAsync(formUrl);
                         var leadResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<LeadResponse>(response);
